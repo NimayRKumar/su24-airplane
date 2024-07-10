@@ -4,12 +4,10 @@
 <properties>
 	<comment>A sample configuration file.</comment>
 	
-<entry key="airplane.classes">airplane.g0.SerializedPlayer</entry>
+<entry key="airplane.classes">airplane.g0.SerializedPlayer airplane.g3.Group3Player</entry>
 
-	
 	<entry key = "airplane.numgames">1</entry>
 	
 	<entry key = "airplane.board.dir">flights</entry>
-	
-	
+
 </properties>

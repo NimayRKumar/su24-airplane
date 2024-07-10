@@ -48,8 +48,8 @@ public class Plane extends GameObject {
 		this.id = other.id;
 		this.dependencies = other.dependencies;
 	}
-	
-	
+
+
 	public double getVelocity() {
 		return VELOCITY;
 	}
