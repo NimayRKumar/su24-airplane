@@ -101,41 +101,50 @@ public class Group3Player extends airplane.sim.Player {
     }
 
 
-    private boolean checkOutOfBounds(double[] locs) {
-        for (double l : locs) {
-            if (l < 0 || l > 100)
-                return true;
+    private boolean checkAllOutOfBounds(double[] xVals, double[] yVals) {
+        int withinBounds = 0;
+        for (int i=0; i<xVals.length; ++i) {
+            double xi = xVals[i];
+            double yi = yVals[i];
+            if(xi >= 0 && xi <= 100 || yi >= 0 && yi <= 100) {
+                ++withinBounds;
+            }
         }
-        return false;
+
+        return (withinBounds == 0);
     }
 
 
     private boolean detectCollision(ArrayList<Plane> planes, double[] bearings) {
-        Plane p0 = planes.get(0);
-        Plane p1 = planes.get(1);
-        double x0 = p0.getX();
-        double y0 = p0.getY();
-        double x1 = p1.getX();
-        double y1 = p1.getY();
+        double[] xVals = new double[planes.size()];
+        double[] yVals = new double[planes.size()];
+
+        for(int i = 0; i < planes.size(); ++i) {
+            xVals[i] = planes.get(i).getX();
+            yVals[i] = planes.get(i).getY();
+        }
 
         while (true) {
-            if (checkOutOfBounds(new double[]{x0, y0, y0, y1})) {
+            if (checkAllOutOfBounds(xVals, yVals)) {
                 return false;
             }
 
-            double dist = Math.sqrt(Math.pow(x1 - x0, 2.0) + Math.pow(y1 - y0, 2.0));
-
-            if (dist <= 5.0) {
-                return true;
+            for (int i = 0; i < planes.size(); ++i) {
+                for (int j = i+1; j < planes.size(); ++j ) {
+                    double dist = Math.sqrt(Math.pow(xVals[i] - xVals[j], 2.0) + Math.pow(yVals[i] - yVals[j], 2.0));
+                    if (dist <= 5.0) {
+                        return true;
+                    }
+                }
             }
 
-            double rb0 = (bearings[0] - 90) * Math.PI/180;
-            double rb1 = (bearings[1] - 90) * Math.PI/180;
-            x0 += Math.cos(rb0) * p0.getVelocity();
-            y0 += Math.sin(rb0) * p0.getVelocity();
-
-            x1 += Math.cos(rb1) * p1.getVelocity();
-            y1 += Math.sin(rb1) * p1.getVelocity();
+            //update positions based on trajectory & velocity
+            for (int i = 0; i < planes.size(); ++i) {
+                Plane pi = planes.get(i);
+                double radialBearing = (pi.getBearing() - 90) * Math.PI/180;
+                xVals[i] += Math.cos(radialBearing) * pi.getVelocity();
+                yVals[i] += Math.sin(radialBearing) * pi.getVelocity();
+            }
         }
     }
 
