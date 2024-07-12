@@ -1,16 +1,13 @@
 package airplane.g3;
-
 import airplane.sim.Plane;
 
 import java.awt.*;
 import java.awt.geom.Point2D;
-import java.util.*;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
-import airplane.sim.SimulationResult;
 import org.apache.log4j.Logger;
-import airplane.sim.Plane;
-import airplane.sim.Player;
 
 
 public class Group3Player extends airplane.sim.Player {
@@ -69,6 +66,43 @@ public class Group3Player extends airplane.sim.Player {
         return n;
     }
 
+    private static void sortPlanesByDeparture(ArrayList<Plane> planes) {
+        planes.sort((p1, p2) -> {
+            if (p1.getDepartureTime() < p2.getDepartureTime()) {
+                return 1;
+            } else if (p1.getDepartureTime() > p2.getDepartureTime()) {
+                return -1;
+            }
+            return 0;
+        });
+    }
+    private boolean isSameDest(Plane p1, Plane p2) {
+        return ((p1.getDestination().x == p2.getDestination().x) && (p1.getDestination().y == p2.getDestination().y));
+    }
+
+    private boolean[] getConvergentPlanes(ArrayList<Plane> planes) {
+        ArrayList<Plane> convergentPlanes = new ArrayList<>();
+        boolean[] convergentIndices = new boolean[planes.size()];
+
+        for (int i = 0; i < planes.size() - 1; ++i) {
+            for (int j = i+1; j < planes.size(); ++j) {
+                Plane pi = planes.get(i);
+                Plane pj = planes.get(j);
+
+                //if planes have same destination and neither are already landed
+                if (isSameDest(pi, pj) && pi.getBearing() != -2 && pj.getBearing() != -2) {
+                    convergentPlanes.add(pi);
+                    convergentIndices[i] = true;
+                    convergentIndices[j] = true;
+                }
+            }
+        }
+
+        sortPlanesByDeparture(convergentPlanes);
+        return convergentIndices;
+        //return convergentPlanes;
+    }
+
 
     private boolean checkOutOfBounds(double[] locs) {
         for (double l : locs) {
@@ -80,30 +114,12 @@ public class Group3Player extends airplane.sim.Player {
 
 
     private boolean detectCollision(ArrayList<Plane> planes, double[] bearings) {
-        double[] slope = new double[planes.size()];
-        double [] intercept = new double[planes.size()];
-
-        for (int i = 0; i < planes.size(); ++i) {
-            Plane pi = planes.get(i);
-            double x = pi.getX();
-            double y = pi.getY();
-            Point2D.Double dest = pi.getDestination();
-
-            slope[i] = (dest.y - y) / (dest.x - x);
-            intercept[i] = y;
-        }
         Plane p0 = planes.get(0);
         Plane p1 = planes.get(1);
         double x0 = p0.getX();
         double y0 = p0.getY();
         double x1 = p1.getX();
         double y1 = p1.getY();
-
-        double slope0 = (y0 - p0.getDestination().y) / (x0 - p0.getDestination().x);
-        double slope1 = (y1 - p1.getDestination().y) / (x1 - p1.getDestination().x);
-
-        double angle0 = Math.atan(slope0);
-        double angle1 = Math.atan(slope1);
 
         while (true) {
             if (checkOutOfBounds(new double[]{x0, y0, y0, y1})) {
@@ -126,36 +142,78 @@ public class Group3Player extends airplane.sim.Player {
         }
     }
 
-    @Override
-    public double[] updatePlanes(ArrayList<Plane> planes, int round, double[] bearings) {
-        double[] newBearings = new double[planes.size()];
-        double[] calcBearings = new double[planes.size()];
-        double[] currBearings = bearings.clone();
+    private double updateBearing(Plane plane, int index, int round, int delay, double currBearing) {
+        double newBearing = 0.0;
 
-        boolean collision = false;
-
-        //if planes headed straight to destination, would it cause a crash?
-        for (int i = 0; i < planes.size(); ++i) {
-            Plane pi = planes.get(i);
-            calcBearings[i] = calculateBearing(pi.getLocation(), pi.getDestination());
-            pi.setBearing(calcBearings[i]);
+        if (plane.getBearing() != -1 && plane.getBearing() != -2 && round >= delay) {
+            if (index % 2 == 0) {
+                newBearing = getUpdatedBearing(plane.getBearing(), 0);
+            }
+            else {
+                newBearing = getUpdatedBearing(plane.getBearing(), 90);
+            }
+        }
+        else {
+            newBearing = currBearing;
         }
 
+        return newBearing;
+    }
+
+    @Override
+    public double[] updatePlanes(ArrayList<Plane> planes, int round, double[] bearings) {
+        double[] newBearings = bearings.clone();
+        double[] calcBearings = new double[planes.size()];
+        boolean collision = false;
+
+        //separate planes headed to same destination vs those headed to different destinations
+
+        //ArrayList<Plane> convergentPlanes = getConvergentPlanes(planes);
+        boolean[] convergentIndices = getConvergentPlanes(planes);
+        //ArrayList<Plane> divergentPlanes = new ArrayList<>(planes);
+        //divergentPlanes.removeAll(convergentPlanes);
+        //ArrayList<Plane> delayedPlanes = new ArrayList<>();
+        double[] delays = new double[planes.size()];
+
+        //if planes headed straight to destination, would it cause a crash?
+
+        for (int i = 0; i < planes.size(); ++i) {
+            Plane pi = planes.get(i);
+
+            if (pi.getBearing() != -2) {
+                calcBearings[i] = calculateBearing(pi.getLocation(), pi.getDestination());
+                pi.setBearing(calcBearings[i]);
+            }
+        }
         if (round > 1 && planes.size() > 1) {
             collision = detectCollision(planes, calcBearings);
         }
 
-        //crash - divert planes from each other
-        if(collision && round > 1) {
-            int dir = getClosestMultiple((int) planes.get(0).getBearing(), 90);
+        for (int i = 1; i < planes.size(); ++i) {
+            if (convergentIndices[i]) {
+                delays[i] = 5 * i;
+            }
+        }
 
+        //crash - divert planes from each other
+        if(collision) {
             for (int i = 0; i < planes.size(); ++i) {
                 Plane pi = planes.get(i);
-                if (pi.getBearing() != -1 && pi.getBearing() != -2) {
+                if (bearings[i] != -1 && bearings[i] != -2 && round >= delays[i]) {
                     if (i % 2 == 0) {
                         newBearings[i] = getUpdatedBearing(pi.getBearing(), 0);
-                    } else {
+                    }
+                    else {
                         newBearings[i] = getUpdatedBearing(pi.getBearing(), 90);
+                    }
+                }
+                else if (bearings[i] != -2) {
+                    //keep delayed planes grounded
+                    if (round < delays[i]) {
+                        newBearings[i] = -1;
+                    }
+                    else {
+                        newBearings[i] = calculateBearing(pi.getLocation(), pi.getDestination());
                     }
                 }
             }
@@ -165,9 +223,9 @@ public class Group3Player extends airplane.sim.Player {
             for (int i = 0; i < planes.size(); ++i) {
                 Plane pi = planes.get(i);
                 double newBearing = calculateBearing(pi.getLocation(), pi.getDestination());
-                if (pi.getBearing() == -1 && round >= pi.getDepartureTime()) {
+                if (bearings[i] == -1 && round >= pi.getDepartureTime()) {
                     newBearings[i] = newBearing;
-                } else if (pi.getBearing() != -1 && pi.getBearing() != -2 && round >= pi.getDepartureTime()) {
+                } else if (pi.getBearing() != -1 && bearings[i] != -2 && round >= pi.getDepartureTime()) {
                     newBearings[i] = getUpdatedBearing(pi.getBearing(), newBearing);
                 }
             }
