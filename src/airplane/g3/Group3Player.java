@@ -2,10 +2,7 @@ package airplane.g3;
 import airplane.sim.Plane;
 
 import java.awt.*;
-import java.awt.geom.Point2D;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 
 import org.apache.log4j.Logger;
 
@@ -176,7 +173,6 @@ public class Group3Player extends airplane.sim.Player {
         double[] delays = new double[planes.size()];
 
         //if planes headed straight to destination, would it cause a crash?
-
         for (int i = 0; i < planes.size(); ++i) {
             Plane pi = planes.get(i);
 
