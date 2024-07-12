@@ -73,6 +73,10 @@ public class Group3Player extends airplane.sim.Player {
             return 0;
         });
     }
+
+    private boolean isSameDepart(Plane p1, Plane p2) {
+        return ((p1.getLocation().x == p2.getLocation().x) && (p1.getLocation().y == p2.getLocation().y));
+    }
     private boolean isSameDest(Plane p1, Plane p2) {
         return ((p1.getDestination().x == p2.getDestination().x) && (p1.getDestination().y == p2.getDestination().y));
     }
@@ -87,7 +91,7 @@ public class Group3Player extends airplane.sim.Player {
                 Plane pj = planes.get(j);
 
                 //if planes have same destination and neither are already landed
-                if (isSameDest(pi, pj) && pi.getBearing() != -2 && pj.getBearing() != -2) {
+                if (isSameDepart(pi, pj) || (isSameDest(pi, pj)) && pi.getBearing() != -2 && pj.getBearing() != -2) {
                     convergentPlanes.add(pi);
                     convergentIndices[i] = true;
                     convergentIndices[j] = true;
@@ -106,7 +110,7 @@ public class Group3Player extends airplane.sim.Player {
         for (int i=0; i<xVals.length; ++i) {
             double xi = xVals[i];
             double yi = yVals[i];
-            if(xi >= 0 && xi <= 100 || yi >= 0 && yi <= 100) {
+            if(xi >= 0 && xi <= 100 && yi >= 0 && yi <= 100) {
                 ++withinBounds;
             }
         }
