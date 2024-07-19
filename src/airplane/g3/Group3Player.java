@@ -36,7 +36,7 @@ public class Group3Player extends airplane.sim.Player {
         }
 */
         // Place planes into buckets based on their initial bearing
-        double[] minna = new double[50];
+        double[] minna = new double[planes.size()];
         double bearing=-1;
         for (int i = 0; i < planes.size(); i++) {
                 bearing = calculateBearing(planes.get(i).getLocation(), planes.get(i).getDestination());
@@ -159,13 +159,15 @@ public class Group3Player extends airplane.sim.Player {
                     &&  p.dependenciesHaveLanded(bearings))
             {
                 bearings[i] = calculateBearing(p.getLocation(), p.getDestination());
+                //simulate which planes cause collision
+                //those bearings[i] get an additional delayTime of 30
 
                 for (int j = 0; j < planes.size(); j++) {
                         Plane l2 = planes.get(j);
                         if (j==i){
                             continue;
                         }
-                        else if (l2.getBearing() != -1 && l2.getBearing() != -2 && p.getLocation().distance(l2.getLocation()) <= 10 ) {
+                        else if (l2.getBearing() != -1 && l2.getBearing() != -2 && p.getBearing()!=-1 &&p.getBearing() !=-2 && p.getLocation().distance(l2.getLocation()) <= 10 ) {
                            // bearings[i] += 8;
                             System.err.println("index1 = " + i +" ,index2= " + j);
                             if (bearings[i] > 360) {
