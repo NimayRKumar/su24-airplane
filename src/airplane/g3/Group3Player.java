@@ -15,7 +15,7 @@ public class Group3Player extends airplane.sim.Player {
     private HashMap<Integer, ArrayList<Integer>> bins;
 
     private int delayMultiplier = 10;
-    private int takeOffDelay = 0;
+    private int takeOffDelay = 5;
 
     private boolean[] divergentIndices;
 
