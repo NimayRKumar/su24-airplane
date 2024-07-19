@@ -41,16 +41,21 @@ public class Group3Player extends airplane.sim.Player {
         for (int i = 0; i < planes.size(); i++) {
                 bearing = calculateBearing(planes.get(i).getLocation(), planes.get(i).getDestination());
                 minna[i] = bearing;
-                if (bearing > 315) {
-                    delayTime[i] = 1;
-                }
-                else if (bearing > 270) { delayTime[i] = 350; }
-                else if (bearing > 225) { delayTime[i] = 300; }
-                else if (bearing > 180) { delayTime[i] = 250; }
-                else if (bearing > 135) { delayTime[i] = 200; }
-                else if (bearing > 90) { delayTime[i] = 150; }
-                else if (bearing > 45) { delayTime[i] = 100; }
-                else  { delayTime[i] = 350; }
+
+                if (bearing > 315) { delayTime[i] = 1; }    //group 1;
+                else if (bearing > 270) { delayTime[i] = 600; }
+                else if (bearing > 225) { delayTime[i] = 500; }
+                else if (bearing > 180) { delayTime[i] = 400; }
+                else if (bearing > 135) { delayTime[i] = 300; }
+                else if (bearing > 90) { delayTime[i] = 200; } // group 3
+                else if (bearing > 45) { delayTime[i] = 100; } // group 2
+                else  { delayTime[i] = 700; }
+                if (i==12 ) {delayTime[i] += 30;}
+                if (i==9  ) {delayTime[i] += 30;}
+                if (i==19 ) {delayTime[i] += 30;}
+                if (i==19 ) {delayTime[i] += 30;}
+                if (i==42 ) {delayTime[i] += 30;}
+                if (i==39 ) {delayTime[i] += 30;}
         }
         return;
 /*
@@ -145,22 +150,63 @@ public class Group3Player extends airplane.sim.Player {
     @Override
     public double[] updatePlanes(ArrayList<Plane> planes, int round, double[] bearings) {
 
+        boolean adjusted = false;
         for (int i = 0; i < planes.size(); i++) {
+
             Plane p = planes.get(i);
 
-            //System.err.println(convergentIndices[i]);
-            // if(convergentIndices[i]){
-            //   int adjustedDepartureTime = p.getDepartureTime() + (i * 10);
-            // if ( p.getBearing() == -1 && round >= adjustedDepartureTime) {
-            //   bearings[i] = calculateBearing(p.getLocation(), p.getDestination());
-            //}
-            //}
             if (p.getBearing() == -1 && p.getBearing() != -2 && round >= (p.getDepartureTime() + delayTime[i])
-                   // && round >= delayTime[i]
-                    &&  p.dependenciesHaveLanded(bearings)) {
-                //  System.err.println(p.getDepartureTime());
+                    &&  p.dependenciesHaveLanded(bearings))
+            {
                 bearings[i] = calculateBearing(p.getLocation(), p.getDestination());
+
+                for (int j = 0; j < planes.size(); j++) {
+                        Plane l2 = planes.get(j);
+                        if (j==i){
+                            continue;
+                        }
+                        else if (l2.getBearing() != -1 && l2.getBearing() != -2 && p.getLocation().distance(l2.getLocation()) <= 10 ) {
+                           // bearings[i] += 8;
+                            System.err.println("index1 = " + i +" ,index2= " + j);
+                            if (bearings[i] > 360) {
+                                bearings[i] = bearings[i] % 360;
+                            }
+                            adjusted = true;
+                            break;
+                        }
+                }
+
+
             }
+/*
+            // If no collision adjustment was made, adjust bearing toward destination
+            if (!adjusted) {
+                double needed = calculateBearing(p.getLocation(), p.getDestination());
+                double currentBearing = bearings[i];
+                double difference = needed - currentBearing;
+
+                // Normalize the difference to the range [-180, 180]
+                if (difference > 180) {
+                    difference -= 360;
+                } else if (difference < -180) {
+                    difference += 360;
+                }
+
+                if (Math.abs(difference) <= 10) {
+                    bearings[i] = needed;
+                } else if (difference > 0) {
+                    bearings[i] += 10;
+                } else {
+                    bearings[i] -= 10;
+                }
+
+                if (bearings[i] < 0) {
+                    bearings[i] += 360;
+                } else if (bearings[i] >= 360) {
+                    bearings[i] -= 360;
+                }
+            }
+             */
         }
         return bearings;
     }
