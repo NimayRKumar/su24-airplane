@@ -1,7 +1,6 @@
 package airplane.g3;
 import airplane.sim.Plane;
 
-import java.awt.*;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,9 +37,6 @@ public class Group3Player extends airplane.sim.Player {
         }
     }
 
-    private double getOppositeBearing(double bearing) {
-        return validateBearing(bearing + 180);
-    }
     private double validateBearing(double bearing) {
         if (bearing >= 360) {
             bearing -= 360;
@@ -66,11 +62,10 @@ public class Group3Player extends airplane.sim.Player {
         for (int i=0; i< planes.size(); ++i) {
             Plane pi = planes.get(i);
             double slope = (pi.getY() - pi.getDestination().getY()) / (pi.getX() - pi.getDestination().getX());
-            double angle = validateBearing(Math.atan(slope) * 180 / Math.PI);
 
             double signX = Math.signum(pi.getX() - pi.getDestination().getX());
             double signY = Math.signum(pi.getY() - pi.getDestination().getY());
-            int bin = 0;
+            int bin;
 
             //going right
             if (signX == -1) {
@@ -111,8 +106,6 @@ public class Group3Player extends airplane.sim.Player {
                 bin = 6;
             }
 
-            //int bin = (int) angle / 30;
-
             if (bins.get(bin) == null) {
                 ArrayList<Integer> arr = new ArrayList<>();
                 arr.add(i);
@@ -152,45 +145,6 @@ public class Group3Player extends airplane.sim.Player {
         return divergentIndices;
     }
 
-    private boolean[] getConvergentPlanes(ArrayList<Plane> planes) {
-        boolean[] convergentIndices = new boolean[planes.size()];
-
-        for (int i = 0; i < planes.size() - 1; ++i) {
-            for (int j = i+1; j < planes.size(); ++j) {
-                Plane pi = planes.get(i);
-                Plane pj = planes.get(j);
-
-                //if planes have same destination and neither are already landed
-                if (isSameDepart(pi, pj) || (isSameDest(pi, pj)) && pi.getBearing() != -2 && pj.getBearing() != -2) {
-                    convergentIndices[i] = true;
-                    convergentIndices[j] = true;
-                }
-            }
-        }
-
-        return convergentIndices;
-    }
-
-    private double[] delaySubset(HashMap<String, ArrayList<Integer>> map, double[] delays) {
-        for (String key : map.keySet()) {
-            ArrayList<Integer> indices = map.get(key);
-            int delay = 0;
-            for (Integer i : indices) {
-                delays[i] += 10 * delay;
-                ++delay;
-            }
-        }
-        return delays;
-    }
-
-    private double[] delayPlanes(ArrayList<Plane> planes, ArrayList<Integer> currPlanes) {
-        double[] delays = new double[planes.size()];
-
-        delaySubset(departures, delays);
-
-        return delays;
-    }
-
     private void setDepartures(ArrayList<Plane> planes) {
         for (int i = 0; i < planes.size(); ++i) {
             Plane pi = planes.get(i);
@@ -205,7 +159,6 @@ public class Group3Player extends airplane.sim.Player {
         }
     }
 
-
     private boolean checkAllOutOfBounds(double[] xVals, double[] yVals) {
         int withinBounds = 0;
         for (int i=0; i<xVals.length; ++i) {
@@ -218,7 +171,6 @@ public class Group3Player extends airplane.sim.Player {
 
         return (withinBounds == 0);
     }
-
 
     private boolean detectCollision(ArrayList<Plane> planes, int steps) {
         double[] xVals = new double[planes.size()];
@@ -289,7 +241,6 @@ public class Group3Player extends airplane.sim.Player {
         return true;
     }
 
-
     @Override
     public double[] updatePlanes(ArrayList<Plane> planes, int round, double[] bearings) {
         double[] newBearings = bearings.clone();
@@ -344,13 +295,14 @@ public class Group3Player extends airplane.sim.Player {
             }
             else {
                 currPlanes = this.bins.get(bin);
-                logger.info(bin);
                 break;
             }
         }
 
-        for (int i=0; i<currPlanes.size(); ++i) {
-            delays[currPlanes.get(i)] = this.delayMultiplier * i;
+        if(currPlanes.size() > 2) {
+            for (int i = 0; i < currPlanes.size(); ++i) {
+                delays[currPlanes.get(i)] = this.delayMultiplier * i;
+            }
         }
 
         //crash - divert planes from each other
